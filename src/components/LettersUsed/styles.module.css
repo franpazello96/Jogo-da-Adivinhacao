@@ -5,8 +5,16 @@
 
 }
 
-.lettersUsed h5 {
+.lettersUsed > h5 {
   font-size: 1.5rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  margin: 0.75rem;
+  color: #32325f;
+
+}
+
+.lettersUsed > div {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
