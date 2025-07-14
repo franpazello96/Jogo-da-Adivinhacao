@@ -13,21 +13,28 @@ import { LettersUsed } from "./components/LettersUsed";
 import type { LettersUsedProps } from "./components/LettersUsed";
 
 export default function App() {
-  const [attempts, setAttemps ] = useState(0)
+  const [score, setScore] = useState(0)
+  //const [attempts, setAttemps ] = useState(0)
   const [lettersUsed, setLettersUsed] = useState<LettersUsedProps[]>([])
   const [letter, setLetter ] = useState("")
   const [challenge, setChallenge ] = useState <Challenge | null > (null)
 
+  const ATTEMPTS_MARGIN = 5;
+
   function handleRestartGame() {
-    alert("Reiniciar o jogo");
+    const isConfirmed = window.confirm("Você tem certeza que deseja reiniciar o jogo?");
+    if (isConfirmed) {
+      startGame();
+    }
   }
 
   function startGame (){
    const index = Math.floor(Math.random() * WORDS.length);
    const randomWord = WORDS[index];
    setChallenge(randomWord);
-   setAttemps(0)
+   setScore(0)
    setLetter("")
+   setLettersUsed([]);
   }
 
   function handleConfirm (){
@@ -46,14 +53,42 @@ export default function App() {
       return alert ("Você já utilizou a letra " + value)
     }
 
-    setLettersUsed((prevState)=> [...prevState, {value, correct:false }])
+    const hits = challenge.word.toUpperCase().split("").filter((char) => char === value).length;
+    const correct = hits > 0;
+    const currentScore = score + hits; 
+
+    setLettersUsed((prevState)=> [...prevState, {value, correct }])
+    setScore(currentScore)
     setLetter("")
 
   }
 
+  function endGame(message: string) {
+    alert(message);
+    startGame();
+  }
+
+
   useEffect(() => {
     startGame();
   }, []);
+
+useEffect(() => {
+  if (!challenge) {
+    return;
+  }
+
+  setTimeout(() => {}, 200); 
+  if (score >= challenge.word.length) {
+    return endGame("Você ganhou! A palavra era: " + challenge.word);
+  } 
+  const attemptLimit = challenge.word.length + ATTEMPTS_MARGIN;
+  if (lettersUsed.length === attemptLimit) {
+    return endGame("Você perdeu! A palavra era: " + challenge.word);
+  }
+
+}, [score, lettersUsed.length])
+
 
   if(!challenge) {
     return
@@ -62,14 +97,16 @@ export default function App() {
   return (
     <div className={styles.container}>
       <main>
-        <Header current={attempts} max={10} onRestart={handleRestartGame} />
-        <Tip tip="Dica: Uma das linguagens de programação mais utilizada." /> 
+        <Header current={lettersUsed.length} max={challenge.word.length + ATTEMPTS_MARGIN} onRestart={handleRestartGame} />
+        <Tip tip={challenge.tip} /> 
         <div className={styles.word}> 
             {
-              challenge.word.split("").map(() => (
-                <Letter value="" />
-              ))
-            }
+              challenge.word.split("").map((letter, index) => {
+                const letterUsed = lettersUsed.find((used) => used.value.toUpperCase() === letter.toUpperCase());
+                return <Letter key = {index} 
+                value={letterUsed?.value} 
+                color={letterUsed?.correct ? "correct" : "default"} />
+              })}
         </div>
 
         <h4>Palpite</h4>
@@ -77,7 +114,6 @@ export default function App() {
           <Input autoFocus maxLength={1} placeholder="?" 
           value={letter}
           onChange={(e) => setLetter(e.target.value)}/>
-
           <Button title="Confirmar" onClick={handleConfirm} />
         </div>
 
